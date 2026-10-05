@@ -1,0 +1,27 @@
+[package]
+name = "natdal-device"
+version = "0.1.0"
+edition = "2024"
+authors = ["Natdal <support@natdal.app>"]
+license = "LicenseRef-Proprietary"
+publish = false
+description = "Sign in once, stay signed in — the device side of natdal-id"
+repository = "https://github.com/natdal-works/natdal-device"
+
+[dependencies]
+anyhow = "1"
+base64 = "0.23"
+ed25519-dalek = "3"
+hex = "0.4"
+rand = "0.10"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+thiserror = "2"
+ureq = { version = "3.4.2", features = ["json"], optional = true }
+
+
+[features]
+# The blocking HTTP client. An app with its own HTTP stack turns it off and uses only the key,
+# the request signature and `peek`.
+default = ["client"]
+client = ["dep:ureq"]
