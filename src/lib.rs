@@ -254,6 +254,12 @@ impl Client {
         self.get("/v1/devices", &self.access_token(id)?)
     }
 
+    /// This product's live devices on the account, with public keys — who this device may connect
+    /// to and accept connections from.
+    pub fn peers(&self, id: &Identity) -> Result<serde_json::Value> {
+        self.get("/v1/peers", &self.access_token(id)?)
+    }
+
     /// Make a token that lets other machines join without a browser.
     pub fn enroll_token(&self, id: &Identity, uses: i64, ttl_hours: i64) -> Result<String> {
         #[derive(Deserialize)]
