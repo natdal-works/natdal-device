@@ -365,8 +365,12 @@ impl Client {
     }
 
     /// Forget the cached token — after the plan changed, for instance.
+    /// Forget every cached token — the device's own and each app's ([`Client::access_token_for`]).
+    /// The apps' tokens name this device, so a sign-out or a new sign-in must not hand them out.
     pub fn forget_token(&self) {
-        self.cache.lock().unwrap_or_else(|p| p.into_inner()).token = None;
+        let mut cache = self.cache.lock().unwrap_or_else(|p| p.into_inner());
+        cache.token = None;
+        cache.by_audience.clear();
     }
 
     /// Forget one app's cached token ([`Client::access_token_for`]).
