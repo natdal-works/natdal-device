@@ -173,6 +173,10 @@ pub enum Refused {
     /// sign-out either.
     #[error("this device may not ask for that app")]
     AudienceNotAllowed,
+    /// natdal-id does not know that app (a 400 that is not the clock): a caller's bug or a server
+    /// without that app yet. Not a sign-out, and not the clock either.
+    #[error("natdal-id does not know that app")]
+    UnknownAudience,
 }
 
 #[cfg(feature = "client")]
@@ -255,17 +259,22 @@ impl Client {
     /// Why a call was refused. Only 401 is "signed out"; a 403 that names an app's audience is that
     /// app's alone.
     fn refused(status: u16, res: &mut ureq::http::Response<ureq::Body>) -> Refused {
+        let mut error = || {
+            let body = res.body_mut().read_to_string().unwrap_or_default();
+            serde_json::from_str::<serde_json::Value>(&body).ok().and_then(|v| v["error"].as_str().map(str::to_string))
+        };
         match status {
             401 => Refused::SignedOut,
-            403 => {
-                let body = res.body_mut().read_to_string().unwrap_or_default();
-                let error = serde_json::from_str::<serde_json::Value>(&body).ok().and_then(|v| v["error"].as_str().map(str::to_string));
-                match error.as_deref() {
-                    Some("audience_removed") => Refused::AudienceRemoved,
-                    Some("audience_not_allowed") => Refused::AudienceNotAllowed,
-                    _ => Refused::Status(403),
-                }
-            }
+            403 => match error().as_deref() {
+                Some("audience_removed") => Refused::AudienceRemoved,
+                Some("audience_not_allowed") => Refused::AudienceNotAllowed,
+                _ => Refused::Status(403),
+            },
+            // A 400 is the clock unless it names the app (`unknown_audience`).
+            400 => match error().as_deref() {
+                Some("unknown_audience") => Refused::UnknownAudience,
+                _ => Refused::Status(400),
+            },
             s => Refused::Status(s),
         }
     }
