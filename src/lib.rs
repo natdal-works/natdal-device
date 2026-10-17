@@ -157,6 +157,7 @@ pub struct Access {
 #[cfg(feature = "client")]
 /// Why a call was refused — so an app can tell "sign in again" from "try later".
 #[derive(Debug, thiserror::Error)]
+#[non_exhaustive]
 pub enum Refused {
     /// The device was removed from the account, or its key is unknown: sign in again.
     #[error("this device is no longer signed in")]
